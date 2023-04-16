@@ -11,12 +11,13 @@ def main():
     screenWidth = root.winfo_screenwidth()
     screenHeight = root.winfo_screenheight()
     
-    # root dimensions and size
+    # root window dimensions and size
     root.title("Dijkstra Project")
     root.geometry(f"{screenWidth}x{screenHeight}")
     root.maxsize = (screenWidth,screenHeight)
     root.configure(bg="white")
 
+    #calling which page is to be called first
     customGraphPage(root,screenWidth,screenHeight)
     
     print(f"screen width: {screenWidth}, screen height: {screenHeight}")
@@ -30,7 +31,7 @@ def deleteFrames(root):
         print (frames)
         frames.destroy()
 
-# all of the actual frame's size and placement on the window is constant, so this function makes things easier for myself
+# all of the full size frame's size and placement on the window is constant, so this function makes things easier for myself
 def makeFrame(root,colour,screenWidth,screenHeight):
     frame = tk.Frame(
         root,
@@ -41,35 +42,46 @@ def makeFrame(root,colour,screenWidth,screenHeight):
     return frame
 
 
+
+    
+
 def customGraphPage(root,screenWidth,screenHeight):
-    
-    customGraphFrame = makeFrame(root,"grey",screenWidth,screenHeight)
-    nodeCreationState(customGraphFrame)
-
-
-
-
-
-def nodeCreationState(customGraphFrame):
     global numberOfNodes,nodeDragData,nodeData
+    numberOfNodes = 0
+
+    customGraphFrame = makeFrame(root,"grey",screenWidth,screenHeight)
     
+    """
+    Creating 2D dictionary to store the node's center coords .
+    they all have the first key as n(i) as integers correspond to the auto incremented ID of the tkinter objects. 
+    This means each an edge created before the 16 nodes could have the ID of 1-16 thus be referenced in the dictionary
+    """
     nodeData = {}
-    for i in range(1, 17):
+    for i in range(16):
         nodeData[f"n{i}"] = {"number": i, "empty": True, "x": 0, "y": 0}
 
-    
-    
+    """
+    The list below is to store the edges weights between the nodes
+    Every time a node is added another 
+    """
 
+    nodeEdges = []
+    
+    
+    #dictionary used to temporarily store and change each node being dragged
     nodeDragData = {"x": 0, "y": 0, "item": None}
-    numberOfNodes = 0 
 
+    
+    
+    #function used to display all the widgets of the customGraph frame
     customGraphFrameWidgets(customGraphFrame)
 
 
-
-def createEdge(canvas,edgeFromEntry,edgeToEntry): #creating edges between inputted nodes
+#creates the edge using the inputs from the entry widgets 
+def createEdge(canvas,edgeFromEntry,edgeToEntry): 
     edgeInputCheck = True
     fromNode,toNode = getEdgeEntry(edgeFromEntry,edgeToEntry) # gets user inputs from the entry widgets
+    
     # here should be some validation for the entry box inputs
     if edgeInputCheck == False: 
         print("can only input numbers")
@@ -86,12 +98,12 @@ def createEdge(canvas,edgeFromEntry,edgeToEntry): #creating edges between inputt
     midpointY = (y0+y1)//2 
     edgeWeight = canvas.create_text(
         midpointX,midpointY,fill = "black",font =("DejaVu Sans",13),text="weight",tags = (f"{fromNode}to{toNode}","weights"))
-    canvas.tag_raise("node") # so the line does not go on top of the nodes
-    canvas.tag_raise("nodeNumber") #so the number is on top of the node
+    canvas.tag_raise("node") # makes the nodes raise above the edges on the canvas
+    canvas.tag_raise("nodeNumber") # so the number is on top of the node
 
 
-# how to call the user inputs from the edge entry boxes 
-def getEdgeEntry(entryFrom, entryTo): 
+# how to call the user inputs from the edge entry boxes and deleting what was entered in the entry boxes
+def getEdgeEntry(entryFrom, entryTo,weightEntry): 
     
     fromNode = entryFrom.get()
     print(f"From: {fromNode}")
@@ -113,8 +125,8 @@ def getEdgeEntry(entryFrom, entryTo):
 #shows nodeData's nested dictionaries line by line
 def showDict():
     print("")
-    for i in range(14):
-        print(nodeData[str(i+1)])
+    for i in range(16 ):
+        print(nodeData[f"n{str(i)}"])
     print("")
 
 
@@ -139,7 +151,7 @@ def createNode(canvas):
     global numberOfNodes,radius
     radius = 30
     if numberOfNodes < 16: 
-        numberOfNodes += 1
+        
 
         nodeData[f"n{numberOfNodes}"]["empty"] = False
         nodeData[f"n{numberOfNodes}"]["x"] = 300+20*numberOfNodes
@@ -162,6 +174,7 @@ def createNode(canvas):
         canvas.tag_bind("node", "<B1-Motion>", lambda e:nodeDrag(e,canvas))
         canvas.tag_bind("node", "<ButtonRelease-1>",lambda e:nodeDragEnd(e,canvas))
 
+        numberOfNodes += 1
     
     else: 
         print("TOO MANY NODES")
@@ -235,7 +248,7 @@ def resetCanvas(customGraphFrame,canvas):
 def runDijkstra(numberOfNodes):
     edgeData =[[0 for i in range(numberOfNodes)] for j in range(numberOfNodes)]
 
-
+#procedure to place all the buttons on the screen
 def customGraphFrameWidgets(customGraphFrame):
 
     customGraphCanvas = tk.Canvas (customGraphFrame,
@@ -248,7 +261,7 @@ def customGraphFrameWidgets(customGraphFrame):
     )
     mousePosLabel.place(relx = 0.33, rely=0.83)
 
-    
+    #tracks and displays the position of the mouse on the screen.
     customGraphCanvas.bind("<Motion>",lambda e: mousePosLabel.configure(text = f"Coordinates|x:{e.x},y:{e.y}| "))
 
 
@@ -265,7 +278,7 @@ def customGraphFrameWidgets(customGraphFrame):
     )
     showCoordDictButton.place(relx=0.49,rely=0.83)
 
-    te = ("DejaVu Sans",13)
+    textFont_13D = ("DejaVu Sans",13)
 
     edgeEntryFrame = tk.Frame(
         customGraphFrame,
@@ -280,15 +293,15 @@ def customGraphFrameWidgets(customGraphFrame):
         height = 5,
         width =10
     )
-    edgeFromLabel.grid(row=0,column=0)
-    edgeFromLabel.configure(font = te)
+    edgeFromLabel.grid(row=1,column=0)
+    edgeFromLabel.configure(font = textFont_13D)
 
     edgeFromEntry = tk.Entry(
         edgeEntryFrame,
-        width = 1
+        width = 3
     )
-    edgeFromEntry.grid(row=0,column=1)
-    edgeFromEntry.configure(font = te)
+    edgeFromEntry.grid(row=1,column=1)
+    edgeFromEntry.configure(font = textFont_13D)
 
     edgeToLabel = tk.Label(
         edgeEntryFrame,
@@ -296,21 +309,36 @@ def customGraphFrameWidgets(customGraphFrame):
         height = 5,
         width =10
     )
-    edgeToLabel.grid(row = 1, column =0)
-    edgeToLabel.configure(font = te)
+    edgeToLabel.grid(row = 2, column =0)
+    edgeToLabel.configure(font = textFont_13D)
 
     edgeToEntry = tk.Entry(
         edgeEntryFrame,
-        width = 1
+        width = 3
     )  
-    edgeToEntry.grid(row=1,column=1)
-    edgeToEntry.configure(font = te)
-   
+    edgeToEntry.grid(row=2,column=1)
+    edgeToEntry.configure(font = textFont_13D)
+    
+    weightLabel = tk.Label(
+        edgeEntryFrame,
+        text = "Weight",
+        height = 5,
+        width =10
+    )
+    weightLabel.grid(row = 3, column =0)
+    weightLabel.configure(font = textFont_13D)
+    
+    weightEntry = tk.Entry(
+        edgeEntryFrame,
+        width=3
+    )
+    weightEntry.grid(row=3,column=1)
+    weightEntry.configure(font = textFont_13D)
 
     edgeEntryButton = tk.Button(
         edgeEntryFrame, text = "Create edge",
-        width = 20, command = lambda: createEdge(customGraphCanvas,edgeFromEntry,edgeToEntry) ,font = te)
-    edgeEntryButton.grid(row=3,columnspan =2 )
+        width = 20, command = lambda: createEdge(customGraphCanvas,edgeFromEntry,edgeToEntry,weightEntry) ,font = textFont_13D)
+    edgeEntryButton.grid(row=4,columnspan =2 )
 
 
 
@@ -321,3 +349,4 @@ def entryCharacterLimit(entry):
 
 
 main()
+
