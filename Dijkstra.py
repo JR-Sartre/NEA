@@ -42,9 +42,6 @@ def makeFrame(root,colour,screenWidth,screenHeight):
     return frame
 
 
-
-    
-
 def customGraphPage(root,screenWidth,screenHeight):
     global numberOfNodes,nodeDragData,nodeData,nodeEdges
     numberOfNodes = 0
