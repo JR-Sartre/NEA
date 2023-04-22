@@ -9,7 +9,7 @@ Triple quotations are used for more in depth explanations - maybe info for docum
 Subroutine naming : 
     'pages' contain corresponding frames.
     'make' return something.
-    'place' puts something on the screen.
+    'create' do not.
     'show' print out what they refer to.
 
 Important tags: 'node' , 'edge', 'nodeLetter'
@@ -17,12 +17,18 @@ Important tags: 'node' , 'edge', 'nodeLetter'
 In customGraphPage - 
 
 
-
 """
+
+
 
 #importing required libraries
 import tkinter as tk
 from PIL import Image, ImageTk
+
+
+global textFont
+#text font I would like to use, the coding rooms original
+textFont = ("DejaVu Sans",13)
 
 def main():
     #start of the tkinter loop
@@ -34,27 +40,70 @@ def main():
     screenWidth = root.winfo_screenwidth()
     screenHeight = root.winfo_screenheight()
     
-    #setting root window dimensions to fit the full screen and making background white
+    # root window dimensions and size
+    root.title("Dijkstra Project")
     root.geometry(f"{screenWidth}x{screenHeight}")
-    root.minsize = (screenWidth,screenHeight)
+    root.maxsize = (screenWidth,screenHeight)
     root.configure(bg="white")
 
     # calling which page is to be called first
     customGraphPage(root)
     
-    #end of code to be contained within tkinter loop
+    # removable in end project
+    print(f"screen width: {screenWidth}, screen height: {screenHeight}")
+
     root.mainloop()
 
+# procedure used to delete the current frame - freeing up resources
+def deleteFrames(root):
+    print("frame deleted.")
+    for frames in root.winfo_children():
+        print (frames)
+        frames.destroy()
 
+"""
+Standardised tkinter widgets / canvas objects : More concise
+makeFullFrame - frame on top of root that covers the whole screen.
+makeCircle - each node is the virtually the same canvas object but with differnt tags.
+"""
+def makeFullFrame(root,colour):
+    frame = tk.Frame(
+        root,
+        width = screenWidth,height = screenHeight
+    )
+    frame.place(x=0,y=0)
+    frame.configure(bg=colour)
+    return frame
 
+def makeCircle(canvas,xCoord,yCoord,radius, **kwargs):
+    x0 = xCoord - radius 
+    y0 = yCoord - radius 
+    x1 = xCoord + radius 
+    y1 = yCoord + radius 
+    return canvas.create_oval(x0, y0 ,x1 ,y1, tags = (f"node{numberOfNodes}","node"), **kwargs)
 
+def makeButton(frame,type,colour):
+    if type == "customGraphTopBar":
+        bWidth= screenWidth//30
+        bHeight= screenHeight //30
 
-
-
-
-
-
+    elif type == "customGraphSideBar":
+        bWidth = screenWidth//20
+        bHeight = screenHeight //10
+    else:
+        bWidth = screenWidth //10
+        bHeight = screenHeight //20
+        print("sad")
     
+    
+    button = tk.Button(
+        frame,
+        background=colour,
+        width = bWidth,height = bHeight
+    )
+    return button
+
+
 
 def customGraphPage(root):
     global numberOfNodes,numberOfEdges,nodeDragData,nodeData,nodeEdges
@@ -87,18 +136,18 @@ def customGraphPage(root):
 
 
 
-def placeNode(canvas): 
+def createNode(canvas): 
     global numberOfNodes,radius
     radius = 30
     
     # max 16 nodes allowed currently - 0 to 15
     if numberOfNodes < 16: 
         
-        startCentreX = 300+20*numberOfNodes
-        startCentreY = 900+20*numberOfNodes
+        startCentreX = 30+20*numberOfNodes
+        startCentreY = 90+20*numberOfNodes
 
         #creating a node with tags "{the number of the node}" and "node" , with each creation being offset by a bit 
-        makeNode(
+        makeCircle(
             canvas,startCentreX,startCentreY,radius,
             fill = "#CBC3E3",outline = "#301934", width = radius//15
         )
@@ -119,13 +168,13 @@ def placeNode(canvas):
         canvas.create_text(
             startCentreX,startCentreY,
             text = str(nodeData[f"node{numberOfNodes}"]["label"]),
-            fill = "black", tags = (f"l{numberOfNodes}","nodeLabel")
+            fill = "black", tags = (f"label{numberOfNodes}","nodeLabel")
         )
         
         # will store the intial position of each node which is hardcoded (for now)
         # label position is irrelevant as we move using its tag alongside the node
-        nodeData[f"n{numberOfNodes}"]["x"]= startCentreY
-        nodeData[f"n{numberOfNodes}"]["y"]= startCentreY
+        nodeData[f"node{numberOfNodes}"]["x"]= startCentreY
+        nodeData[f"node{numberOfNodes}"]["y"]= startCentreY
 
         
         # binds the dragging commands to items in canvas with tag "node"
@@ -140,7 +189,7 @@ def placeNode(canvas):
 
 
 # creates the edge using the inputs from the entry widgets 
-def placeEdge(canvas,edgeFromEntry,edgeToEntry,weightEntry): 
+def createEdge(canvas,edgeFromEntry,edgeToEntry,weightEntry): 
     global numberOfEdges
     
      
@@ -173,12 +222,12 @@ def placeEdge(canvas,edgeFromEntry,edgeToEntry,weightEntry):
     canvas.create_line(
         x0,y0,x1,y1,
         fill = "green",width = "2",
-        tags = ("edges",f"edge{numberOfEdges}",f"edge{numberOfEdges}a",f"edge{numberOfEdges}b")
+        tags = ("edge",f"edge{numberOfEdges}",f"edge{numberOfEdges}a",f"edge{numberOfEdges}b")
     )
     
     #adding the tag unto the appropriate edges depending if its to or from
-    nodeData[f"n{firstNode}"]["from"].append(f"edge{numberOfEdges}a") 
-    nodeData[f"n{secondNode}"]["to"].append(f"edge{numberOfEdges}b")
+    nodeData[f"node{firstNode}"]["from"].append(f"edge{numberOfEdges}a") 
+    nodeData[f"node{secondNode}"]["to"].append(f"edge{numberOfEdges}b")
 
     #getting midtpoints of the edge to create a weight label on it
     midpointX = (x0+x1)//2 
@@ -186,7 +235,7 @@ def placeEdge(canvas,edgeFromEntry,edgeToEntry,weightEntry):
     canvas.create_text(
         midpointX,midpointY,
         fill = "black",font =("DejaVu Sans",13),
-        text=f"{weight}",tags = ("edgeWeight",f"label{numberOfEdges}")
+        text=f"{weight}",tags = ("edgeWeight",f"edgeWeight{numberOfEdges}")
     )
     
     # changes order of which objects are on top 
@@ -218,13 +267,13 @@ def nodeDragStart(event,canvas):
 def nodeDrag(event,canvas):
     #gets the first tag of the item and also gets only the number of it
     nodeTag = nodeDragData["item"]
-    nodeNumber = nodeTag[1:]
+    nodeNumber = nodeTag[-1] # does not worm for node10 ,node 11 ect cuz it gets last digit
 
-    
     # compute how much the mouse has moved
     deltaX = event.x - nodeDragData["x"]
     deltaY = event.y - nodeDragData["y"]
-    # moves the object and the label by the correct distance 
+    
+    # moves the node object and the label by the correct distance 
     canvas.move(nodeDragData["item"], deltaX, deltaY)
 
     # moves the node label with the node
@@ -235,39 +284,60 @@ def nodeDrag(event,canvas):
     nodeDragData["x"] = event.x
     nodeDragData["y"] = event.y
 
-    
-
-    
-
     # changes node's colour as it is being dragged
     canvas.itemconfigure(nodeDragData["item"],fill = "#9F2B68")
 
-    # records the position on the canvas of the node (x and y coordinates of centre)
+    # records the position on the canvas of the node after the circle moves according to the mouse.
+    # the node's pos is made of two points and finds the centre by doing x+radius,y+radius and saves the centre to nodeData.  
     x0 = int(canvas.coords(nodeDragData["item"])[0])
     y0 = int(canvas.coords(nodeDragData["item"])[1])
     
     nodeData[nodeDragData["item"]]["x"] = x0 + radius 
     nodeData[nodeDragData["item"]]["y"] = y0 + radius
     
-    # moves edges according to centre of the circle
+    """ 
+    moves edges according to centre of the circle
+    line is made of two points (x0,y0) and (x1,y1)
+    if its stored as "from" in NodeData the it will move the first point of the line ie (x0,y0) to the moving node's centre
+    if its stored as "to" then it will move (x1,y1) instead.
+    this makes the correct line end follow the correct node. 
+    """
+
     fromEdgesLength=len(nodeData[f"node{nodeNumber}"]["from"])
     for i in range(fromEdgesLength): 
-        tempEdge = nodeData[f"n{nodeNumber}"]["from"][i]
+        tempEdge = nodeData[f"node{nodeNumber}"]["from"][i]
         staticX = int(canvas.coords(tempEdge)[2])
         staticY = int(canvas.coords(tempEdge)[3])
+        
+        tempWeightLabel = tempEdge[-2]
+        tempWeightLabel = f"edgeWeight{tempWeightLabel}"
+        
+        midpointY = (staticY + nodeData[nodeDragData["item"]]["y"])//2
+        midpointX = (staticX + nodeData[nodeDragData["item"]]["x"])//2 
+        
+        canvas.coords(tempWeightLabel,midpointX,midpointY)
+        
         canvas.coords(tempEdge,nodeData[nodeDragData["item"]]["x"],nodeData[nodeDragData["item"]]["y"],staticX,staticY)
 
-    toEdgesLength = len(nodeData[f"n{nodeNumber}"]["to"])
+    toEdgesLength = len(nodeData[f"node{nodeNumber}"]["to"])
     for i in range(toEdgesLength): 
-        tempEdge = nodeData[f"n{nodeNumber}"]["to"][i] 
+        tempEdge = nodeData[f"node{nodeNumber}"]["to"][i] 
         staticX = int(canvas.coords(tempEdge)[0])
         staticY = int(canvas.coords(tempEdge)[1])
+        
+        tempWeightLabel = tempEdge[-2]
+        tempWeightLabel = f"edgeWeight{tempWeightLabel}"
+        
+        midpointY = (staticY + nodeData[nodeDragData["item"]]["y"])//2
+        midpointX = (staticX + nodeData[nodeDragData["item"]]["x"])//2 
+        
+        canvas.coords(tempWeightLabel,midpointX,midpointY)
+        
+
         canvas.coords(tempEdge,staticX,staticY,nodeData[nodeDragData["item"]]["x"],nodeData[nodeDragData["item"]]["y"])
 
-
-
 def nodeDragEnd(event,canvas):    
-    #change back the colour of the node after letting go of the mouse
+    # change back the colour of the node after letting go of the mouse
     canvas.itemconfigure(nodeDragData["item"],fill = "#CBC3E3")
 
 
@@ -291,14 +361,14 @@ def getEdgeEntry(entryFrom,entryTo,weightEntry):
 
 
 
-#shows nodeData's nested dictionaries line by line
+#shows nodeData's nested dictionaries line by line - only needed for testing and stuff
 def showNodeDataDict():
     print("")
     for i in range(numberOfNodes):
-        print(nodeData[f"n{str(i)}"])
+        print(nodeData[f"node{str(i)}"])
     print("")
 
-
+#similar to above bot for the 2D list
 def showEdges():
     print("\nNode edges :")
 
@@ -306,24 +376,22 @@ def showEdges():
         print(f"{i}:{nodeEdges[i]}")
 
 
-#this will allow the user to reset the graph and placing new nodes and edges
+#this will allow the user to reset the graph and placing new nodes and edges -untested
 def resetCanvas(frame,canvas):
     global numberOfNodes,nodeData,nodeEdges
     frame.delete('node')
     frame.delete('edge')
     frame.delete('nodeLabel')
-    
+    frame.delete('edgeWeight')
     numberOfNodes = 0
     nodeData = {}
     nodeEdges = []
 
 
 def runDijkstra(startNode):
-    # rough start - start node will always be 0 
+    # rough start - start node will always be 0 for now
     # from prior validation, all the nodes will be at least be connected in the network 
     # if no edge between 2 nodes, they have weight 100, largest weight input is 99 - acts as inf+
-
-    global numberOfNodes
 
     startNode = 0 
     for n in range(numberOfNodes):
@@ -333,20 +401,23 @@ def runDijkstra(startNode):
 
 #procedure to place all the buttons and labels on the screen
 def customGraphFrameWidgets(frame):
-    global textFont
-    #text font I would like to use, the coding rooms original
-    textFont = ("DejaVu Sans",13)
-
-
     customGraphCanvas = tk.Canvas (frame,
     width = screenWidth*0.8, height = screenHeight *0.8 , bg = "#414a4c")
     customGraphCanvas.grid(row=1,column=0,rowspan=2,columnspan=2)
 
-    mousePosLabel = tk.Label (
+    """customGraphTopBarFrame :""" 
+
+    customGraphTopBarFrame = tk.Frame(
         frame,
+        width = screenHeight*0.9,height = screenHeight * 0.3, bg="#414a3c"
+    )
+    customGraphTopBarFrame.grid(row=0,column=0,columnspan=3)
+
+    mousePosLabel = tk.Label (
+        customGraphTopBarFrame,
         width = 25,height = 3
     )
-    mousePosLabel.grid(row=0,column=3)
+    mousePosLabel.grid(row=0,column=2)
 
     
     #tracks and displays the position of the mouse on the screen.
@@ -354,45 +425,43 @@ def customGraphFrameWidgets(frame):
 
 
     createNodeButton = tk.Button(
-        frame,text="Create Node",
+        customGraphTopBarFrame,text="Create Node",
         width = 50, height = 3,command = lambda: createNode(customGraphCanvas) 
     )
     createNodeButton.grid(row=0,column=0)
 
 
     showNodeDataButton = tk.Button(
-        frame, text = "Print node data",
+        customGraphTopBarFrame, text = "Print node data",
         width = 50 , height = 3, command = showNodeDataDict
     )
     showNodeDataButton.grid(row=0,column=1)
 
     showEdgesButton = tk.Button(
-        frame,text= "Print edge data",
+        customGraphTopBarFrame,text= "Print edge data",
         width = 50, height = 3, command= showEdges
     )
     showEdgesButton.grid(row=0,column=2)
 
-    edgeCreationFrame(frame,customGraphCanvas)
 
-"""Seperate frame inside customGraphFrame which will hold the edge creation entry boxes"""    
+    """EdgeCreationFrame"""
     
-def edgeCreationFrame(frame,canvas):
     edgeEntryFrame = tk.Frame(
         frame,
         width=350,height = 700 
     )
     edgeEntryFrame.grid(row=1,column=2,columnspan=2)
 
-
+    #everything else belongs to this 
     edgeFromLabel = tk.Label(
         edgeEntryFrame,
         text = "From",height = 5,width =10
     )
+    
     edgeFromEntry = tk.Entry(
         edgeEntryFrame,
         width = 3,borderwidth=5,validate="key"
     )
-    
 
     edgeToLabel = tk.Label(
         edgeEntryFrame,
@@ -435,7 +504,8 @@ def edgeCreationFrame(frame,canvas):
     
     
     edgeEntryButton.grid(row=4,columnspan =2 )
-    edgeEntryButton.configure(command = lambda: createEdge(canvas,edgeFromEntry,edgeToEntry,weightEntry))
+    edgeEntryButton.configure(command = lambda: createEdge(customGraphCanvas,edgeFromEntry,edgeToEntry,weightEntry))
+
 
 
 def nodeInputValidation(inputString,actionType):
@@ -467,39 +537,7 @@ def weightValidation(inputString,actionType):
 
 
 
-""" 
-Standardised widget creation functions
-"""
-# procedure used to delete the current frame - freeing up resources
-def deleteFrames(root):
-    print("frame deleted.")
-    for frames in root.winfo_children():
-        print (frames)
-        frames.destroy()
 
-
-
-"""
-Standardised tkinter widgets: More concise
-makeFullFrame - frame on top of root that covers the whole screen.
-"""
-def makeFullFrame(root,colour,screenWidth,screenHeight):
-    frame = tk.Frame(
-        root,
-        width = screenWidth,height = screenHeight
-    )
-    frame.place(x=0,y=0)
-    frame.configure(bg=colour)
-    return frame
-
-
-# create a node on Canvas - numberOfNodes will be global 
-def makeNode(canvas,xCoord,yCoord,radius,numberOfNodes **kwargs):
-    x0 = xCoord - radius 
-    y0 = yCoord - radius 
-    x1 = xCoord + radius 
-    y1 = yCoord + radius 
-    return canvas.create_oval(x0, y0 ,x1 ,y1, tags = (f"node{numberOfNodes}","nodes"), **kwargs)
 
 
 main()
